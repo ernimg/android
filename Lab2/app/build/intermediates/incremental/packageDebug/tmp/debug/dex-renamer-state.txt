@@ -1,0 +1,4 @@
+#Wed Apr 03 08:23:52 GMT+01:00 2019
+base.0=C\:\\Users\\erni\\AndroidStudioProjects\\Lab2\\app\\build\\intermediates\\dex\\debug\\mergeDexDebug\\out
+path.0=classes.dex
+renamed.0=classes.dex

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.kosmalski.goodapp">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="ErnestApp"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name="com.mglosiek.ernestapp.TimerActivity"
+            android:label="Timer" />
+        <activity
+            android:name="com.mglosiek.ernestapp.EditDataActivity"
+            android:label="Edycja notatki" />
+        <activity
+            android:name="com.mglosiek.ernestapp.ListDataActivity"
+            android:label="Lista notatek" />
+        <activity
+            android:name="com.mglosiek.ernestapp.MealActivity"
+            android:label="Stwórz notatke" />
+        <activity
+            android:name="com.mglosiek.ernestapp.SourceActivity"
+            android:label="Źródło" />
+        <activity
+            android:name="com.mglosiek.ernestapp.KitActivity"
+            android:label="Niezbędnik"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.mglosiek.ernestapp.CompendiumActivity"
+            android:label="Kompendium" />
+        <activity
+            android:name="com.mglosiek.ernestapp.AtlasActivity"
+            android:label="Atlas" />
+        <activity android:name="com.mglosiek.ernestapp.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
