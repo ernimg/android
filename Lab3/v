@@ -1,0 +1,262 @@
+<template>
+    <div class="container-fluid">
+        <base-dialog :show="!!err" title="Błąd walidacji pliku" @close="handlErr">
+            {{ err }}
+        </base-dialog>
+        <div class="row">
+            <div class="col-sm-6 ">
+                <ul class="list-group">
+                    <li v-for="script in loadScript" :key="script.id" class="list-group-item">
+                        <input class="form-check-input me-1" type="radio" :name="script.scriptName"
+                            :value="script.scriptName" :id="script.id" v-model.trim="selectedScript">
+                        <label class="form-check-label" for="secondRadio">{{ script.scriptName }}</label>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-sm-4" v-for="item in lookingDescription" :key="item.id">
+                <div>
+                    <h4>Opis skryptu: {{ item.scriptName }}</h4>
+                </div>
+                <article>
+                    <p class="description_script">{{ item.sDescription }}</p>
+                    <div>
+                        <h4>Wymagane kolumny dla pliku wsadowego</h4>
+                        <div class="table-container">
+                            <!-- Pierwszy wiersz z dynamicznie generowanymi nagłówkami -->
+                            <div class="row header-row">
+                                <div v-for="(header, index) in dynamicHeaders" :key="'header-' + index"
+                                    class="cell header-cell">
+                                    {{ header }}
+                                </div>
+                            </div>
+
+                            <!-- Drugi wiersz z danymi z tablicy -->
+                            <div class="row data-row">
+                                <div v-for="(item, index) in excelArr" :key="'data-' + index" class="cell">
+                                    {{ item }}
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <span>Autor skryptu: {{ item.sAuthor }}</span>
+                </article>
+            </div>
+        </div>
+        <div class="row" v-show="lookingDescription.length > 0">
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <form @submit.prevent="handleSubmit">
+                        <label for="formFile" class="form-label">Dodaj plik wsadowy.</label>
+                        <input class="form-control" @change="handleFileUpload" accept=".xlsx,.xls" ref="file"
+                            type="file" id="formFile">
+                        <button class="btn" v-if="!redyToValid" type="submit">Wyślij plik <font-awesome-icon
+                                icon="fa-solid fa-paper-plane" /></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button class="btn" v-if="redyToValid" @click="goToInitRm">Przed następnym krokiem zwaliduj plik <font-awesome-icon
+            icon="fa-solid fa-list-check" /></button>
+    <!-- {{ lookingDescription }}
+    {{ userInfo }} -->
+</template>
+<script>
+import { onUnmounted, ref, watch, computed } from 'vue';
+import { useTasksStore } from '../../../store/tasks';
+import { userAuthStore } from "../../../store/auth";
+import { useScriptStore } from '../../../store/scripts';
+import BaseDialog from '../ui/BaseDialog.vue';
+export default {
+    props: ["loadScript"],
+    emits: ["initTaskDone"],
+    components: { BaseDialog },
+
+
+    setup(props, context) {
+        const useScript = useScriptStore();
+        const useAuth = userAuthStore();
+        const tasksStore = useTasksStore();
+        const selectedScript = ref('');
+        const lookingDescription = ref([]);
+        const selectedFile = ref(null);
+        const redyToValid = ref(false);
+        const fileName = ref('');
+        const sFields = ref('');
+        const excelArr = ref(null);
+        const err = ref(null);
+        const userInfo = computed(() => {
+            return useAuth.getUserInfo;
+        })
+
+        // Funkcja generująca nagłówki na podstawie ilości elementów w `data`
+        const dynamicHeaders = computed(() => {
+            return excelArr.value.map((_, index) => String.fromCharCode(65 + index));
+        })
+
+        function handleFileUpload(event) {
+            selectedFile.value = event.target.files[0];
+
+        }
+        function allReset() {
+
+            const zm = document.getElementById('formFile');
+            zm.value = "";
+            fileName.value = "";
+            redyToValid.value = false;
+            selectedFile.value = null;
+        }
+
+        function filterData(sel) {
+
+            if (props.loadScript && props.loadScript.length > 0) {
+
+                if (selectedFile.value) {
+                    allReset();
+                }
+
+                lookingDescription.value = props.loadScript.filter(item => item.scriptName === sel);
+                // sFieldsArray.value = (lookingDescription.value[0].sFields).split("|");
+                sFields.value = lookingDescription.value[0].sFields;
+                excelArr.value = (lookingDescription.value[0].sFields).split(";")
+                // console.log((lookingDescription.value[0].sFields).split("|"));
+            } else {
+                lookingDescription.value = [];
+            }
+        }
+        function genDate() {
+            const dateObj = new Date();
+            const month = dateObj.getUTCMonth() + 1;
+            const day = dateObj.getUTCDate();
+            const year = dateObj.getUTCFullYear();
+
+            return year + "" + "" + month + "" + day
+        }
+        async function goToInitRm() {
+            if (fileName.value && sFields.value) {
+                try {
+                    await useScript.validUploadFile({ name: fileName.value, columns: sFields.value, scope: 150 });
+                } catch (error) {
+                    err.value = error.message;
+                }
+            } else {
+                alert("Nie wybrano skryptu lub nie plik nie został załadowany")
+            }
+
+
+
+            if (useScript.getValidationResult === "walidacja poprawna") {
+                context.emit('initTaskDone', { isDone: true, fileName: fileName.value, scriptName: selectedScript.value });
+            } else {
+                err.value = useScript.getValidationResult;
+                allReset()
+            }
+        }
+
+        async function handleSubmit() {
+            if (!selectedFile.value) {
+                alert('Nie wybrano pliku wsadowego');
+                return;
+            }
+            fileName.value = genDate() + "_" + lookingDescription.value[0].scriptName + "_" + userInfo.value.userId + "_" + Math.floor(Math.random() * 10000) + 1;
+            const resultMessage = await tasksStore.uploadFile({ file: selectedFile.value, fileName: fileName.value })
+            console.log("wiadomość z wysyłania", resultMessage)
+            alert(resultMessage)
+            if (resultMessage == "plik został wysłany") {
+                redyToValid.value = !redyToValid.value;
+            }
+        }
+        function handlErr() {
+            err.value = null;
+        }
+        watch(selectedScript, (newValue) => {
+
+            filterData(newValue)
+        });
+
+        onUnmounted(() => {
+            console.log("Zdemontowano komponent 'Dodaj nowe zadanie'");
+        });
+
+        return { selectedScript, excelArr, lookingDescription, userInfo, redyToValid, fileName, err, handleFileUpload, handleSubmit, goToInitRm, handlErr, allReset, dynamicHeaders }
+
+
+    }
+
+}
+</script>
+<style scoped>
+.description_script {
+    width: 100%;
+    padding: 4px 8px;
+    line-height: 200%;
+    border: .2px solid #ddd;
+    background-color: #f9f4f4;
+}
+
+.form-control {
+    margin-bottom: 18px;
+}
+
+.btn {
+    margin-bottom: .4rem;
+    font-size: 1rem;
+    letter-spacing: .1rem;
+    text-align: center;
+    padding: .4rem .4rem;
+    color: #690;
+    border: 1px solid #690;
+    transition: .3s linear;
+    cursor: pointer;
+}
+
+.btn[disabled] {
+    background-color: #ccc;
+    color: #666;
+    border-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn:hover {
+    background-color: #690;
+    color: #fff;
+}
+
+.btn[disabled]:hover {
+    background-color: #ccc;
+    color: #666;
+    border-color: #ccc;
+}
+
+/* .btn.valid{
+    float: right;
+    margin-right: 36px;
+} */
+
+.table-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, auto));
+  gap: 1px; /* Dodaje odstępy między komórkami */
+  border: 1px solid #ddd;
+}
+
+.row {
+  display: contents; /* Umożliwia automatyczne dostosowanie szerokości komórek */
+}
+
+.cell {
+  padding: 8px;
+  border: 1px solid #ddd;
+  text-align: center;
+  word-wrap: break-word; /* Zawijanie tekstu */
+}
+
+/* Stylizacja nagłówków */
+.header-row .cell {
+  font-weight: bold;
+  background-color: #f0f0f0;
+}
+
+</style>
