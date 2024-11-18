@@ -1,0 +1,44 @@
+<div class="table-container mt-3">
+  <table class="table table-bordered table-responsive">
+    <thead>
+      <tr>
+        <th v-for="(header, index) in dynamicHeaders" :key="'header-' + index" scope="col">
+          {{ header }}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="(row, rowIndex) in excelArr" :key="'row-' + rowIndex">
+        <td v-for="(cell, cellIndex) in row" :key="'cell-' + cellIndex">
+          {{ cell }}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+
+.table-container {
+  width: 100%; /* Kontener tabeli dopasowany do szerokości */
+  overflow-x: auto; /* Dodanie scrolla w poziomie na małych ekranach */
+}
+
+.table {
+  table-layout: auto; /* Automatyczna szerokość kolumn */
+  width: 100%; /* Dopasowanie tabeli do rodzica */
+  border-collapse: collapse; /* Usuń przerwy między komórkami */
+}
+
+.table th, .table td {
+  text-align: center; /* Wyśrodkowanie zawartości */
+  vertical-align: middle; /* Wyśrodkowanie w pionie */
+  padding: 8px; /* Dodanie odstępów wewnętrznych */
+  min-width: 100px; /* Minimalna szerokość komórek */
+  word-wrap: break-word; /* Zawijanie tekstu */
+}
+
+.table th {
+  background-color: #f8f9fa; /* Jasny kolor dla nagłówków */
+  font-weight: bold; /* Wytłuszczony tekst nagłówka */
+}
